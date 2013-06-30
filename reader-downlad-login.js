@@ -43,12 +43,9 @@ function main ( argv )
 {
 	doOpts ( argv );
 
-	// console.log ( reader );
 	reader.login ( gUser, gPass, function () {
 		console.log ( "login succeeded" );
-		// getItems ( "user/-/label/" + gTag );
 		getItems ( gTag );
-		// getFeeds ();
 	}, function () {
 		console.log ( "login failed" );
 	});
@@ -56,45 +53,35 @@ function main ( argv )
 
 function getItems ( feed, cont )
 {
-	// let feed = "http://www.google.com/reader/view/?at=zDi1DG3_dL3_FgcS8HR1AQ#stream/user%2F06674516782868565233%2Flabel%2Fmisc";
-
 	reader.getItems ( feed, function ( data, response ) {
 		let base = path.basename ( gTag );
 		let fname = "reader-saved-tag-" + base + "-" + gCount + ".xml";
 
-		// console.log ( "getItems succeeded: ", JSON.stringify ( arguments, null, 4 ) );
-//		console.log ( "getItems succeeded with", data.length, "items, writing file", fname );
 		console.log ( "getItems succeeded, writing file", fname );
 
-		// console.log ( "response.self = ", response.self );
-
+			// data is json or null if getting xml atom feed.
 		let out = data ? JSON.stringify ( data, null, 2 ) : response;
 		fs.writeFileSync ( fname, out, "utf8" )
 
+			// google json representation... not actually used in this setup.
 		let ncont = response.continuation;
 
+			// xml atom feed
 		let match = response.match ( /<gr:continuation>(.*?)<\/gr:continuation>/ );
 
 		if ( match )
 			ncont = match[ 1 ];
 
-			// json
 		if ( ncont )
 		{
 			console.log ( "got continuation: ", ncont );
 
 			gCount += gQuant;
 
+				// Recurse if we got a continuation.
 			getItems ( feed, ncont );
 		}
 	}, { n : gQuant, output : null, c : cont } );
-}
-
-function getFeeds ()
-{
-	reader.loadFeeds ( function ( feeds ) {
-		console.log ( "getFeeds succeeded", feeds );
-	});
 }
 
 main ( process.argv );
