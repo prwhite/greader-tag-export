@@ -7,7 +7,7 @@ Exports non-public entries for tags or Google Reader states (e.g., 'starred') as
  (will download node module dependencies)
 
 ## Usage:
-usage: `reader-download-login.js <user> <pass> <tag>`<br>
+usage: `reader-download-login.js <user> <pass> <xml|json> <tag>`<br>
  common tags:<br>
 `  user/-/label/something`<br>
 `  user/-/state/com.google/starred`<br>

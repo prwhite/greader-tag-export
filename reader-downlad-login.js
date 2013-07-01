@@ -5,27 +5,31 @@
 var reader = require ( "./node-reader.js" );
 var fs = require ( "fs" );
 var path = require ( "path" );
+var clc = require ( "cli-color" );
 
 var gUser = "";
 var gPass = "";
 var gTag = "";
 var gQuant = 1000;
+var gFormat = "";
 var gCount = 0;
 
 // help from here:
 // https://code.google.com/p/pyrfeed/wiki/GoogleReaderAPI
 // http://blog.martindoms.com/2009/10/16/using-the-google-reader-api-part-2/
 // https://gist.github.com/dongyuwei/2034195
+// https://groups.google.com/forum/?fromgroups#!topic/fougrapi/Rab23a9jhzc  (for atom-hifi)
 
 // not used, but informative:
 // https://github.com/rafinskipg/GoogleReader-NodeJS-API
+// https://github.com/mihaip/readerisdead#reader_archive
 
 function doOpts ( args )
 {
-	if ( args.length < 5 )
+	if ( args.length != 6 )
 	{
 		console.log ( "args invalid: ", args, args.length );
-		console.log ( "usage: argv0 <user> <pass> <tag>" )
+		console.log ( "usage: argv0 <user> <pass> <xml|json> <tag>" )
 
 		console.log ( " common tags:" );
 		console.log ( "  user/-/label/something" );
@@ -36,7 +40,8 @@ function doOpts ( args )
 
 	gUser = args[ 2 ];
 	gPass = args[ 3 ];
-	gTag = args[ 4 ];
+	gFormat = args[ 4 ];
+	gTag = args[ 5 ];
 }
 
 function main ( argv )
@@ -44,10 +49,10 @@ function main ( argv )
 	doOpts ( argv );
 
 	reader.login ( gUser, gPass, function () {
-		console.log ( "login succeeded" );
+		console.log ( clc.green ( "login succeeded" ) );
 		getItems ( gTag );
 	}, function () {
-		console.log ( "login failed" );
+		console.log ( clc.red ( "login failed" ) );
 	});
 }
 
@@ -55,9 +60,9 @@ function getItems ( feed, cont )
 {
 	reader.getItems ( feed, function ( data, response ) {
 		let base = path.basename ( gTag );
-		let fname = "reader-saved-tag-" + base + "-" + gCount + ".xml";
+		let fname = "reader-saved-tag-" + base + "-" + gCount + "." + gFormat;
 
-		console.log ( "getItems succeeded, writing file", fname );
+		console.log ( clc.green ( "getItems succeeded, writing file" ), fname );
 
 			// data is json or null if getting xml atom feed.
 		let out = data ? JSON.stringify ( data, null, 2 ) : response;
@@ -67,21 +72,21 @@ function getItems ( feed, cont )
 		let ncont = response.continuation;
 
 			// xml atom feed
-		let match = response.match ( /<gr:continuation>(.*?)<\/gr:continuation>/ );
+		let match = response.match ? response.match ( /<gr:continuation>(.*?)<\/gr:continuation>/ ) : null;
 
 		if ( match )
 			ncont = match[ 1 ];
 
 		if ( ncont )
 		{
-			console.log ( "got continuation: ", ncont );
+			console.log ( clc.cyan ( "got continuation: " ), ncont );
 
 			gCount += gQuant;
 
 				// Recurse if we got a continuation.
 			getItems ( feed, ncont );
 		}
-	}, { n : gQuant, output : null, c : cont } );
+	}, { n : gQuant, output : gFormat, c : cont } );
 }
 
 main ( process.argv );

@@ -24,6 +24,9 @@ var window = {}; ( function() {"use strict";
 
 	var localStorage = {};
 	var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
+	var clc = require ( "cli-color" );
+
 	var reader = window.reader = {};
 	//hack end--------------------------------------------------------------
 
@@ -55,7 +58,7 @@ var window = {}; ( function() {"use strict";
 	// for public xml "http://www.google.com/reader/public/atom/user/<user>/label/<label>"
 	// for private json http://www.google.com/reader/api/0/stream/contents/user%2F-%2Flabel%2Fbuy
 
-	var ITEMS_ROOT = "http://www.google.com/reader/atom/";
+	var ITEMS_ROOT = "http://www.google.com/reader/atom/hifi/";
 
 	//managing the feeds
 	var readerFeeds = [];
@@ -103,7 +106,8 @@ var window = {}; ( function() {"use strict";
 			obj.parameters.ck = Date.now() || new Date().getTime();
 			obj.parameters.accountType = "GOOGLE";
 			obj.parameters.service = "reader";
-			// obj.parameters.output = obj.parameters.output || "json";
+			obj.parameters.output = "json";
+			// obj.parameters.output = "atom-hifi",
 			obj.parameters.client = CLIENT;
 		}
 
@@ -129,7 +133,7 @@ var window = {}; ( function() {"use strict";
 		var request = new XMLHttpRequest();
 		request.open(obj.method, url, true);
 
-console.log ( "makeRequest url: ", url );
+console.log ( "makeRequest url: ", clc.blue ( url ) );
 
 		//set request header
 		request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
@@ -652,7 +656,9 @@ console.log ( "makeRequest url: ", url );
 		makeRequest({
 			method : "GET",
 			// url : BASE_URL + STREAM_PATH + encodeURIComponent(feedUrl),
-			url : ITEMS_ROOT + feedUrl, // encodeURIComponent(feedUrl),
+			url : ( opts.output && opts.output == "xml" ) ? 
+					ITEMS_ROOT + feedUrl : // encodeURIComponent(feedUrl),
+					BASE_URL + STREAM_PATH + encodeURIComponent(feedUrl),
 			parameters : params, /*{
 			 //ot=[unix timestamp] : The time from which you want to retrieve items. Only items that have been crawled by Google Reader after this time will be returned.
 			 //r=[d|n|o] : Sort order of item results. d or n gives items in descending date order, o in ascending order.
@@ -666,11 +672,13 @@ console.log ( "got response of length ", response.length );
 				try {
 					let tmp = JSON.parse(transport.responseText);
 					response = tmp;
-				} catch ( ex ) {}
+				} catch ( ex ) {
+					console.log ( clc.bold ( "response not json" ) );
+				}
 				successCallback(response.items,response);
 			},
 			onFailure : function(transport) {
-				console.error(transport);
+				console.error( clc.red ( transport ) );
 			}
 		});
 	};
